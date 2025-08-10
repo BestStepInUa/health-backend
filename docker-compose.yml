@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    ports:
+      - '${PORT}:3000'
+    environment:
+      DB_TYPE: ${DB_TYPE}
+      DB_HOST: db # звертаємося до контейнера з БД по імені сервісу
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      NODE_ENV: ${NODE_ENV}
+    depends_on:
+      - db
+    env_file:
+      - .env.development.local
+
+  db:
+    image: postgres:latest
+    restart: always
+    env_file:
+      - .env.development.local
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+
