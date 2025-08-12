@@ -1,4 +1,5 @@
-export enum AppMode {
+export enum AppModeEnum {
   DEVELOPMENT = 'development',
   PRODUCTION = 'production',
+  TEST = 'test',
 }

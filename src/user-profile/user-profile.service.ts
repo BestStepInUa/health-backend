@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { UserProfileResponseWithAuthDto } from './dto/user-profile-responce-with-auth.dto';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { UserProfileEntity } from './entities/user-profile.entity';
 
@@ -20,27 +21,16 @@ export class UserProfileService {
     private readonly userProfileRepository: Repository<UserProfileEntity>,
   ) {}
 
-  async createUser(dto: CreateUserProfileDto): Promise<UserProfileResponseDto> {
-    const isAlreadyExists = await this.userProfileRepository.findOne({
-      where: [{ email: dto.email }],
-    });
+  async createUser(
+    CreateUserProfileDto: CreateUserProfileDto,
+  ): Promise<UserProfileResponseDto> {
+    const newUser = this.userProfileRepository.create(CreateUserProfileDto);
 
-    if (isAlreadyExists) {
-      throw new Error('User with this email already exists');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    const userProfile = this.userProfileRepository.create({
-      ...dto,
-      password: hashedPassword,
-    });
-
-    const savedUser = await this.userProfileRepository.save(userProfile);
+    const savedUser = await this.userProfileRepository.save(newUser);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = savedUser;
 
-    return userWithoutPassword;
+    return savedUser;
   }
 
   async findUserById(id: number): Promise<UserProfileResponseDto> {
@@ -55,35 +45,51 @@ export class UserProfileService {
     return user;
   }
 
+  async findUserByEmail(
+    email: string,
+  ): Promise<UserProfileResponseWithAuthDto> {
+    const user = await this.userProfileRepository.findOne({
+      where: { email },
+      select: ['id', 'login', 'email', 'password'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+
+    return user;
+  }
+
   async findAllUsers(): Promise<UserProfileResponseDto[]> {
     return this.userProfileRepository.find();
   }
 
   async updateUserById(
     id: number,
-    dto: UpdateUserProfileDto,
+    updateUserProfileDto: UpdateUserProfileDto,
   ): Promise<UserProfileResponseDto> {
-    const user = await this.userProfileRepository.findOne({ where: { id } });
+    const user = await this.findUserById(id);
 
-    if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-
-    if (dto.email && dto.email !== user.email) {
-      const emailExists = await this.userProfileRepository.findOne({
-        where: { email: dto.email },
-      });
+    if (
+      updateUserProfileDto.email &&
+      updateUserProfileDto.email !== user.email
+    ) {
+      const emailExists = await this.findUserByEmail(
+        updateUserProfileDto.email,
+      );
       if (emailExists)
         throw new ConflictException(
-          `Current email ${dto.email} is already in use`,
+          `Current email ${updateUserProfileDto.email} is already in use`,
         );
     }
 
-    if (dto.password) {
-      dto.password = await bcrypt.hash(dto.password, 10);
+    if (updateUserProfileDto.password) {
+      updateUserProfileDto.password = await this.hashPassword(
+        updateUserProfileDto.password,
+      );
     }
 
-    Object.assign(user, dto);
+    Object.assign(user, updateUserProfileDto);
 
     const updatedUser = await this.userProfileRepository.save(user);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -98,5 +104,9 @@ export class UserProfileService {
     if (result.affected === 0) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
   }
 }

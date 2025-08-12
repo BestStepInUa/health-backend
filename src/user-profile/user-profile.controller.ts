@@ -18,8 +18,8 @@ export class UserProfileController {
   constructor(private readonly userProfileService: UserProfileService) {}
 
   @Post()
-  createUser(@Body() createUserProfileDto: CreateUserProfileDto) {
-    return this.userProfileService.createUser(createUserProfileDto);
+  createUser(@Body() CreateUserProfileDto: CreateUserProfileDto) {
+    return this.userProfileService.createUser(CreateUserProfileDto);
   }
 
   @Get(':id')
@@ -33,8 +33,11 @@ export class UserProfileController {
   }
 
   @Patch(':id')
-  updateUserById(@Param('id') id: number, @Body() dto: UpdateUserProfileDto) {
-    return this.userProfileService.updateUserById(id, dto);
+  updateUserById(
+    @Param('id') id: number,
+    @Body() UpdateUserProfileDto: UpdateUserProfileDto,
+  ) {
+    return this.userProfileService.updateUserById(id, UpdateUserProfileDto);
   }
 
   @Delete(':id')
