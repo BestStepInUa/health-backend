@@ -15,8 +15,8 @@ import { AuthService } from './auth.service';
 
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { RegisterAuthDto } from './dto/register-auth.dto';
-import { JwtAuthenticationGuard } from './guards/jwt-authentication.guard';
-import { LocalAuthGuard } from './guards/localAuth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 import type { RequestWithUser } from './interfaces/requestWithUser.interface';
 
 @Controller('auth')
@@ -45,7 +45,7 @@ export class AuthController {
     return userWithoutPassword;
   }
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthGuard)
   @Post('log-out')
   @HttpCode(200)
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -56,7 +56,7 @@ export class AuthController {
     response.setHeader('Set-Cookie', this.authService.getCookieForLogOut());
   }
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(JwtAuthGuard)
   @Get()
   authenticate(@Req() request: RequestWithUser) {
     const { user } = request;

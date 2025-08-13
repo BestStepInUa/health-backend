@@ -66,10 +66,7 @@ export class AuthService {
     password,
   }: LoginAuthDto): Promise<UserProfileResponseDto> {
     try {
-      console.log(`email: ${email}`);
       const user = await this.userProfileService.findUserByEmail(email);
-      console.log(user);
-      console.log(`password: ${password}`);
       await this.verifyPassword({
         password: password,
         hashedPassword: user.password,
@@ -86,7 +83,6 @@ export class AuthService {
 
   private async verifyPassword({ password, hashedPassword }: IVerifyPassword) {
     const isPasswordMatching = await bcrypt.compare(password, hashedPassword);
-    console.log('isPasswordMatching:', isPasswordMatching);
     if (!isPasswordMatching) {
       throw new BadRequestException('Wrong credentials provided 2');
     }
