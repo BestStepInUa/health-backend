@@ -21,6 +21,6 @@ export class UserProfileEntity {
   @Exclude()
   @IsNotEmpty({ message: 'Пароль не може бути порожнім' })
   @MinLength(8, { message: 'Пароль має бути не менше 8 символів' })
-  @Column()
+  @Column({ select: false })
   password: string;
 }

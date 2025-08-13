@@ -16,10 +16,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate({
-    email,
-    password,
-  }: LoginAuthDto): Promise<UserProfileResponseDto> {
+  async validate(
+    email: LoginAuthDto['email'],
+    password: LoginAuthDto['password'],
+  ): Promise<UserProfileResponseDto> {
     const user = await this.authService.getAuthenticatedUser({
       email,
       password,

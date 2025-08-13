@@ -35,23 +35,25 @@ export class AuthController {
   async logIn(
     @Body() _loginDto: LoginAuthDto,
     @Req() request: RequestWithUser,
-    @Res() response: Response,
+    @Res({ passthrough: true }) response: Response,
   ) {
     const { user } = request;
-    console.log('user:', user);
     const cookie = this.authService.getCookieWithJwtToken(user.id);
     response.setHeader('Set-Cookie', cookie);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
-    return response.send(userWithoutPassword);
+    return userWithoutPassword;
   }
 
   @UseGuards(JwtAuthenticationGuard)
   @Post('log-out')
+  @HttpCode(200)
   // eslint-disable-next-line @typescript-eslint/require-await
-  async logOut(@Res() response: Response) {
+  async logOut(
+    @Req() _request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     response.setHeader('Set-Cookie', this.authService.getCookieForLogOut());
-    return response.sendStatus(200);
   }
 
   @UseGuards(JwtAuthenticationGuard)
