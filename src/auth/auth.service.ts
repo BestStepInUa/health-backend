@@ -57,7 +57,7 @@ export class AuthService {
     return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get<IEnvConfig['JWT_ACCESS_EXPIRES_IN']>('JWT_ACCESS_EXPIRES_IN')}`;
   }
 
-  public getCookieForLogOut() {
+  public getCookieForLogOutOrDelete() {
     return `Authentication=; HttpOnly; Path=/; Max-Age=0`;
   }
 

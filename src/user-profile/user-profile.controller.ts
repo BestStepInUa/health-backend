@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import type { RequestWithUser } from 'src/auth/interfaces/requestWithUser.interface';
 
@@ -5,15 +6,18 @@ import {
   Body,
   Controller,
   Delete,
+  HttpCode,
   // Get,
   // Param,
   Patch,
   Req,
+  Res,
   UseGuards,
   // Post,
 } from '@nestjs/common';
 
 import { UserProfileService } from './user-profile.service';
+import { AuthService } from 'src/auth/auth.service';
 
 // import { CreateUserProfileDto } from './dto/create-user-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
@@ -21,7 +25,10 @@ import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 @Controller('user-profile')
 @UseGuards(JwtAuthGuard)
 export class UserProfileController {
-  constructor(private readonly userProfileService: UserProfileService) {}
+  constructor(
+    private readonly userProfileService: UserProfileService,
+    private readonly authService: AuthService,
+  ) {}
 
   // @Post()
   // createUser(@Body() CreateUserProfileDto: CreateUserProfileDto) {
@@ -62,8 +69,16 @@ export class UserProfileController {
     );
   }
 
+  @HttpCode(204)
   @Delete()
-  deleteUserById(@Req() request: RequestWithUser) {
-    return this.userProfileService.deleteUserById(request.user.id);
+  async deleteUserById(
+    @Req() request: RequestWithUser,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.userProfileService.deleteUserById(request.user.id);
+    response.setHeader(
+      'Set-Cookie',
+      this.authService.getCookieForLogOutOrDelete(),
+    );
   }
 }

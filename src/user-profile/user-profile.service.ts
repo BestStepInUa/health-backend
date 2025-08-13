@@ -54,7 +54,6 @@ export class UserProfileService {
     });
 
     if (!user) {
-      console.log('User not found inside UserProfileService');
       throw new NotFoundException(`User with email ${email} not found`);
     }
 
@@ -70,7 +69,6 @@ export class UserProfileService {
     updateUserProfileDto: UpdateUserProfileDto,
   ): Promise<UserProfileResponseDto> {
     const user = await this.findUserById(id);
-    console.log('user in updateUser:', user);
 
     if (
       updateUserProfileDto.email &&

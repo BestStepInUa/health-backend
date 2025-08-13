@@ -53,7 +53,10 @@ export class AuthController {
     @Req() _request: RequestWithUser,
     @Res({ passthrough: true }) response: Response,
   ) {
-    response.setHeader('Set-Cookie', this.authService.getCookieForLogOut());
+    response.setHeader(
+      'Set-Cookie',
+      this.authService.getCookieForLogOutOrDelete(),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
