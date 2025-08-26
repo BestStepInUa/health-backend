@@ -7,4 +7,5 @@ export class UserProfileResponseWithAuthDto extends OmitType(
   ['password'] as const,
 ) {
   password: string;
+  currentHashedRefreshToken: string;
 }

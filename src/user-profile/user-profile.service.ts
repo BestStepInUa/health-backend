@@ -10,7 +10,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 
 import { CreateUserProfileDto } from './dto/create-user-profile.dto';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { UserProfileResponseWithAuthDto } from './dto/user-profile-responce-with-auth.dto';
 import { UserProfileResponseDto } from './dto/user-profile-response.dto';
 import { UserProfileEntity } from './entities/user-profile.entity';
 
@@ -33,9 +32,37 @@ export class UserProfileService {
     return savedUser;
   }
 
-  async findUserById(id: number): Promise<UserProfileResponseDto> {
+  async setCurrentRefreshToken(refreshToken: string, id: number) {
+    const currentHashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.userProfileRepository.update(id, {
+      currentHashedRefreshToken,
+    });
+  }
+
+  async removeRefreshToken(id: number) {
+    return this.userProfileRepository.update(id, {
+      currentHashedRefreshToken: null,
+    });
+  }
+
+  async getUserIfRefreshTokenMatches(refreshToken: string, id: number) {
+    const user = await this.findUserById(id);
+    if (!user.currentHashedRefreshToken) return undefined;
+
+    const isRefreshTokenMatching = await bcrypt.compare(
+      refreshToken,
+      user.currentHashedRefreshToken,
+    );
+
+    if (isRefreshTokenMatching) {
+      return user;
+    }
+  }
+
+  async findUserById(id: number): Promise<UserProfileEntity> {
     const user = await this.userProfileRepository.findOne({
       where: { id },
+      select: ['id', 'login', 'email', 'password', 'currentHashedRefreshToken'],
     });
 
     if (!user) {
@@ -45,9 +72,7 @@ export class UserProfileService {
     return user;
   }
 
-  async findUserByEmail(
-    email: string,
-  ): Promise<UserProfileResponseWithAuthDto> {
+  async findUserByEmail(email: string): Promise<UserProfileEntity> {
     const user = await this.userProfileRepository.findOne({
       where: { email },
       select: ['id', 'login', 'email', 'password'],
@@ -92,8 +117,14 @@ export class UserProfileService {
     Object.assign(user, updateUserProfileDto);
 
     const updatedUser = await this.userProfileRepository.save(user);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      password: _password,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      currentHashedRefreshToken: _currentHashedRefreshToken,
+      ...userWithoutPassword
+    } = updatedUser;
 
     return userWithoutPassword;
   }

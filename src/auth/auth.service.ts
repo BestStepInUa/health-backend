@@ -14,6 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { ACCESS_JWT } from './jwt-modules/access-token.module';
+import { REFRESH_JWT } from './jwt-modules/refresh-token.module';
 
 import { UserProfileService } from 'src/user-profile/user-profile.service';
 
@@ -26,7 +27,8 @@ import { IVerifyPassword } from './interfaces/verifyPassword.interface';
 export class AuthService {
   constructor(
     private readonly userProfileService: UserProfileService,
-    @Inject(ACCESS_JWT) private readonly jwtService: JwtService,
+    @Inject(ACCESS_JWT) private readonly jwtAccessService: JwtService,
+    @Inject(REFRESH_JWT) private readonly jwtRefreshService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -51,14 +53,35 @@ export class AuthService {
     }
   }
 
-  public getCookieWithJwtToken(id: number) {
+  public getCookieWithJwtAccessToken(id: number) {
     const payload: ITokenPayload = { id };
-    const token = this.jwtService.sign(payload);
+    const token = this.jwtAccessService.sign(payload);
     return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get<IEnvConfig['JWT_ACCESS_EXPIRES_IN']>('JWT_ACCESS_EXPIRES_IN')}`;
   }
 
+  public getCookieWithJwtRefreshToken(id: number) {
+    const payload: ITokenPayload = { id };
+    const token = this.jwtRefreshService.sign(payload);
+    const cookie = `Refresh=${token}; HttpOnly; Path=/; Max-Age=${this.configService.get<IEnvConfig['JWT_REFRESH_EXPIRES_IN']>('JWT_REFRESH_EXPIRES_IN')}`;
+    return {
+      cookie,
+      token,
+    };
+  }
+
+  public async setCurrentRefreshToken(refreshToken: string, id: number) {
+    await this.userProfileService.setCurrentRefreshToken(refreshToken, id);
+  }
+
+  public async removeRefreshToken(id: number) {
+    await this.userProfileService.removeRefreshToken(id);
+  }
+
   public getCookieForLogOutOrDelete() {
-    return `Authentication=; HttpOnly; Path=/; Max-Age=0`;
+    return [
+      'Authentication=; HttpOnly; Path=/; Max-Age=0',
+      'Refresh=; HttpOnly; Path=/; Max-Age=0',
+    ];
   }
 
   public async getAuthenticatedUser({
@@ -77,14 +100,14 @@ export class AuthService {
 
       return userWithoutPassword;
     } catch {
-      throw new BadRequestException('Wrong credentials provided 1');
+      throw new BadRequestException('Wrong credentials provided');
     }
   }
 
   private async verifyPassword({ password, hashedPassword }: IVerifyPassword) {
     const isPasswordMatching = await bcrypt.compare(password, hashedPassword);
     if (!isPasswordMatching) {
-      throw new BadRequestException('Wrong credentials provided 2');
+      throw new BadRequestException('Wrong credentials provided');
     }
   }
 }

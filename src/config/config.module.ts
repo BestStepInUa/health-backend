@@ -25,9 +25,9 @@ import { ConfigModule } from '@nestjs/config';
           )
           .default(AppModeEnum.DEVELOPMENT),
         JWT_ACCESS_SECRET: Joi.string().required(),
-        JWT_ACCESS_EXPIRATION_TIME: Joi.string().default('15m'),
+        JWT_ACCESS_EXPIRES_IN: Joi.string().default('15m'),
         JWT_REFRESH_SECRET: Joi.string().required(),
-        JWT_REFRESH_EXPIRATION_TIME: Joi.string().default('7d'),
+        JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
       }),
     }),
   ],

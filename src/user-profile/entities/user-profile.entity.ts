@@ -23,4 +23,8 @@ export class UserProfileEntity {
   @MinLength(8, { message: 'Пароль має бути не менше 8 символів' })
   @Column({ select: false })
   password: string;
+
+  @Exclude()
+  @Column({ type: 'text', nullable: true, select: false })
+  currentHashedRefreshToken: string | null;
 }
